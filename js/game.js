@@ -26,6 +26,8 @@ function rand(min, max) { return Math.floor(Math.random() * (max - min)) + min; 
 
 function updateStates() {
   state.nodes.forEach(function(node) {
+    // Skip already-removed (state=3) or selected (state=2) nodes
+    if (node.state >= 2) return;
     node.state = node.parents.every(function(p) { return p.state >= 2; }) ? 1 : 0;
   });
 }
