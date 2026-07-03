@@ -2,214 +2,63 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Play Mahjong Solitaire Online Free - No Download | MahjongMaster</title>
-<meta name="description" content="Play Mahjong Solitaire online for free. Classic 144 tile layout. No download, no signup. Works on desktop, mobile and tablet.">
-<meta name="keywords" content="play mahjong, mahjong online, free mahjong, play mahjong online, mahjong solitaire online">
-<link rel="canonical" href="https://mahjongmaster.example.com/play/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mahjong Master - Sheep-a-Sheep Puzzle Game | Free Online</title>
+<meta name="description" content="Play the viral Mahjong Sheep-a-Sheep style puzzle game free online. Stack mahjong tiles, match 3 to clear. Two levels - easy and insane. No download.">
+<meta name="keywords" content="mahjong puzzle, sheep a sheep, mahjong match, mahjong stacking, mahjong master">
+<link rel="canonical" href="https://mahjongmaster.example.com/play.html">
+<meta property="og:title" content="Mahjong Master - Sheep Puzzle">
+<meta property="og:description" content="Stack, match, clear. Two levels of pure puzzle joy.">
 <link rel="stylesheet" href="/css/style.css">
-<style>
-.game-fullscreen {
-  background: #2c5f2d;
-  border-radius: 12px;
-  min-height: 600px;
-  padding: 20px;
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  grid-template-rows: repeat(8, 60px);
-  gap: 2px;
-  max-width: 900px;
-  margin: 20px auto;
-}
-.tile {
-  background: linear-gradient(135deg, #fff5e1, #ffe4b5);
-  border: 1px solid #c9a55e;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  cursor: pointer;
-  transition: transform 0.1s;
-  user-select: none;
-}
-.tile:hover { transform: scale(1.1); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-.tile.selected { background: linear-gradient(135deg, #ffd700, #ffa500); transform: scale(1.15); }
-.tile.disabled { opacity: 0.5; cursor: not-allowed; }
-.controls {
-  text-align: center;
-  margin: 20px 0;
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-.controls button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  background: #3498db;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-}
-.controls button:hover { background: #2980b9; }
-.stats {
-  display: flex;
-  gap: 30px;
-  justify-content: center;
-  margin: 16px 0;
-  font-size: 18px;
-}
-.stats span { font-weight: 600; color: #1e3a5f; }
-</style>
 </head>
-<body>
-<header class="header">
-<div class="container">
-<div class="logo"><h1>🀄 MahjongMaster</h1></div>
-<nav class="nav">
-<a href="/">Home</a>
-<a href="/play/">Play Now</a>
-<a href="/rules/">How to Play</a>
-<a href="/strategy/">Strategy</a>
-<a href="/layouts/">Layouts</a>
-<a href="/blog/">Blog</a>
-</nav>
-</div>
-</header>
-
-<section style="padding:30px 0;background:#fff;">
-<div class="container">
-<h1 style="text-align:center;font-size:32px;margin-bottom:8px;">Play Mahjong Solitaire Online</h1>
-<p style="text-align:center;color:#666;">Classic Turtle Layout • 144 Tiles • Free Forever</p>
-
-<div class="stats">
-<span>⏱️ Time: <span id="timer">0:00</span></span>
-<span>🎯 Tiles: <span id="tiles">144</span>/144</span>
-<span>🏆 Moves: <span id="moves">0</span></span>
-</div>
-
-<div class="game-fullscreen" id="game"></div>
-
-<div class="controls">
-<button onclick="newGame()">🔄 New Game</button>
-<button onclick="getHint()">💡 Hint</button>
-<button onclick="undoMove()">↩️ Undo</button>
-<button onclick="shuffleBoard()">🔀 Shuffle</button>
+<body class="game-body">
+<div class="game-header">
+  <div class="game-title">
+    <span class="game-title-zh">麻了个雀</span>
+    <span class="game-title-en">Mahjong Master</span>
+  </div>
+  <div class="game-status">
+    <div class="status-item">
+      <div class="status-label">Level</div>
+      <div class="status-value" id="level-num">Level 1 / 2</div>
+    </div>
+    <div class="status-item">
+      <div class="status-label">Difficulty</div>
+      <div class="status-value" id="level-name">Easy</div>
+    </div>
+    <div class="status-item">
+      <div class="status-label">Tiles Left</div>
+      <div class="status-value" id="count-remaining">0</div>
+    </div>
+    <div class="status-item">
+      <div class="status-label">Slot</div>
+      <div class="status-value" id="count-slot">0 / 7</div>
+    </div>
+  </div>
 </div>
 
-<div style="text-align:center;margin-top:20px;">
-<p style="font-size:14px;color:#666;">Click two identical free tiles to remove them. Click "Hint" if stuck.</p>
+<div id="game-area" class="game-area"></div>
+
+<div class="game-controls">
+  <div class="removed-row">
+    <div class="row-label">Removed:</div>
+    <div id="removed" class="removed-slot"></div>
+  </div>
+  <div class="slot-row">
+    <div class="row-label">Slot:</div>
+    <div id="slot" class="active-slot"></div>
+  </div>
+  <div class="buttons">
+    <button id="btn-remove" class="btn btn-primary">Move Out 3</button>
+    <button id="btn-back" class="btn btn-secondary">Undo</button>
+    <button id="restart-btn" class="btn btn-restart" style="display:none">Restart</button>
+  </div>
 </div>
-</div>
-</section>
 
-<section class="ad-slot">
-<div class="container">
-<div class="ad-placeholder">Advertisement (Google AdSense)</div>
-</div>
-</section>
+<div id="toast" class="toast"></div>
 
-<footer class="footer">
-<div class="container">
-<p class="copyright">&copy; 2026 MahjongMaster</p>
-</div>
-</footer>
+<a href="/" class="back-link">&larr; Back to Home</a>
 
-<script>
-// Simplified Mahjong demo - tile matching game
-const tileSymbols = ['🀇','🀈','🀉','🀊','🀋','🀌','🀍','🀎','🀏','🀙','🀚','🀛','🀜','🀝','🀞','🀟','🀠','🀡','🀀','🀁','🀂','🀃','🀄','🀅','🀆'];
-let board = [];
-let selected = null;
-let moves = 0;
-let startTime = Date.now();
-
-function initBoard() {
-  board = [];
-  for (let i = 0; i < 144; i++) {
-    board.push({symbol: tileSymbols[i % 25], pos: i});
-  }
-  render();
-}
-
-function render() {
-  const game = document.getElementById('game');
-  game.innerHTML = '';
-  board.forEach((tile, idx) => {
-    const div = document.createElement('div');
-    div.className = 'tile';
-    div.textContent = tile.symbol;
-    div.dataset.idx = idx;
-    div.onclick = () => clickTile(idx);
-    if (selected === idx) div.classList.add('selected');
-    game.appendChild(div);
-  });
-  document.getElementById('tiles').textContent = board.length;
-  document.getElementById('moves').textContent = moves;
-}
-
-function clickTile(idx) {
-  if (!board[idx]) return;
-  if (selected === null) {
-    selected = idx;
-  } else if (selected === idx) {
-    selected = null;
-  } else if (board[selected].symbol === board[idx].symbol) {
-    delete board[selected];
-    delete board[idx];
-    selected = null;
-    moves++;
-  } else {
-    selected = idx;
-  }
-  render();
-  checkWin();
-}
-
-function newGame() {
-  moves = 0;
-  startTime = Date.now();
-  initBoard();
-}
-
-function getHint() {
-  for (let i = 0; i < board.length; i++) {
-    if (!board[i]) continue;
-    for (let j = i+1; j < board.length; j++) {
-      if (!board[j]) continue;
-      if (board[i].symbol === board[j].symbol) {
-        selected = i;
-        render();
-        setTimeout(() => { selected = null; render(); }, 1000);
-        return;
-      }
-    }
-  }
-}
-
-function undoMove() { alert('Undo: feature in full version'); }
-function shuffleBoard() { initBoard(); }
-
-function checkWin() {
-  const remaining = board.filter(t => t).length;
-  if (remaining === 0) {
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const m = Math.floor(elapsed / 60);
-    const s = elapsed % 60;
-    alert(`🎉 You won! Time: ${m}:${String(s).padStart(2,'0')} | Moves: ${moves}`);
-  }
-}
-
-// Update timer every second
-setInterval(() => {
-  const elapsed = Math.floor((Date.now() - startTime) / 1000);
-  const m = Math.floor(elapsed / 60);
-  const s = elapsed % 60;
-  document.getElementById('timer').textContent = `${m}:${String(s).padStart(2,'0')}`;
-}, 1000);
-
-initBoard();
-</script>
+<script src="/js/game.js"></script>
 </body>
 </html>
