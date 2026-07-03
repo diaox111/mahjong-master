@@ -1,0 +1,6 @@
+# 旧 URL 重定向
+/privacy  /rules/  301
+/terms  /rules/  301
+
+# 强制 HTTPS
+http://mahjongmaster.pages.dev/*  https://mahjongmaster.pages.dev/:splat  301

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mahjongmaster.pages.dev/sitemap.xml
