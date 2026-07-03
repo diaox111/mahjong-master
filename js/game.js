@@ -5,8 +5,10 @@
 const TILES = ['\uD83C\uDC00','\uD83C\uDC01','\uD83C\uDC02','\uD83C\uDC03','\uD83C\uDC04','\uD83C\uDC05','\uD83C\uDC06','\uD83C\uDC07','\uD83C\uDC08','\uD83C\uDC09','\uD83C\uDC0A','\uD83C\uDC0B','\uD83C\uDC0C','\uD83C\uDC0D','\uD83C\uDC0E','\uD83C\uDC0F','\uD83C\uDC10','\uD83C\uDC11','\uD83C\uDC12','\uD83C\uDC13','\uD83C\uDC14','\uD83C\uDC15','\uD83C\uDC16','\uD83C\uDC17','\uD83C\uDC18','\uD83C\uDC19','\uD83C\uDC1A','\uD83C\uDC1B','\uD83C\uDC1C','\uD83C\uDC1D','\uD83C\uDC1E','\uD83C\uDC1F','\uD83C\uDC20','\uD83C\uDC21'];
 
 const LEVELS = [
-  { cardNum: 8,  layerNum: 3, trap: false, name: 'Easy' },
-  { cardNum: 18, layerNum: 4, trap: true,  name: 'Insane' }
+  // Level 1: dead easy — only 6 tile types, basically flat (1 layer), tiny pile
+  { cardNum: 6,  layerNum: 1, trap: false, name: 'Warm-up' },
+  // Level 2: insane — 14 types, 3 layers deep, trapped
+  { cardNum: 14, layerNum: 3, trap: true,  name: 'Insane' }
 ];
 
 const SLOT_MAX = 7;
@@ -55,6 +57,7 @@ function handleSelect(node) {
     const idx = state.selectedNodes.findIndex(function(s) { return s.type === node.type; });
     if (idx > -1) state.selectedNodes.splice(idx + 1, 0, node);
     else state.selectedNodes.push(node);
+    updateStates();
     render();
     if (state.selectedNodes.length >= SLOT_MAX) setTimeout(onLose, 300);
   }
