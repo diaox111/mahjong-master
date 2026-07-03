@@ -10,7 +10,7 @@ const LEVELS = [
 ];
 
 const SLOT_MAX = 7;
-const TILE_SIZE = 44;
+const TILE_SIZE = 40;
 
 let state = { level: 0, nodes: [], selectedNodes: [], removedNodes: [], preNode: null, removeFlag: false, backFlag: false };
 
@@ -91,45 +91,71 @@ function initLevel(levelIdx) {
   const container = document.getElementById('game-area');
   const W = container.clientWidth;
   const H = container.clientHeight;
-  const centerX = W / 2;
-  const centerY = H / 2 - 30;
+
+  // Determine tile size that fits game area
   const types = [];
   for (let i = 0; i < cfg.cardNum; i++) types.push(i);
   let pool = [];
   for (let j = 0; j < 3 * cfg.layerNum; j++) pool = pool.concat(types);
   if (cfg.trap && rand(0, 100) !== 50) pool.splice(pool.length - cfg.cardNum, cfg.cardNum);
   pool = shuffle(pool);
+
+  // Calculate columns based on tile count - aim for square-ish layout
+  const totalTiles = pool.length;
+  const cols = Math.max(6, Math.ceil(Math.sqrt(totalTiles * 0.9)));
+  const rows = Math.ceil(totalTiles / cols);
+  // Reserve stacking offset for layers (each layer shifts by tileSize/2)
+  const stackShift = (cfg.layerNum - 1) * 0.5;
+  const totalColSpan = cols + stackShift;
+  const totalRowSpan = rows + stackShift;
+
+  // Fit tile size to game area
+  const tileSize = Math.max(28, Math.min(
+    Math.floor((W - 8) / totalColSpan),
+    Math.floor((H - 8) / totalRowSpan),
+    60
+  ));
+
+  // Center grid horizontally, start from top of area
+  const gridWidth = cols * tileSize;
+  const startX = (W - gridWidth) / 2 + tileSize / 2;
+  const startY = tileSize / 2 + 4;
+
+  // Distribute tiles into layers
   const floors = [];
   let remaining = pool.slice();
-  let floorIdx = 1;
+  let fIdx = 0;
   while (remaining.length > 0) {
-    const maxInFloor = floorIdx * floorIdx;
-    const numInFloor = Math.min(remaining.length, rand(Math.ceil(maxInFloor / 2), maxInFloor + 1));
+    // Each layer gets at most cols * rows tiles, minimum cols tiles
+    const maxInFloor = Math.min(cols * rows, remaining.length);
+    const minInFloor = Math.min(Math.max(8, Math.floor(cols * 0.7)), maxInFloor);
+    const numInFloor = rand(minInFloor, maxInFloor + 1);
     floors.push(remaining.splice(0, numInFloor));
-    floorIdx++;
+    fIdx++;
   }
+
   let prevFloorNodes = [];
   floors.forEach(function(floorTiles, fIdx) {
     const usedPos = {};
     const floorNodes = [];
     floorTiles.forEach(function(tileType) {
-      const gridSize = fIdx + 1;
-      const totalCells = gridSize * gridSize;
+      // Pick a random grid position within current layer's row*col grid
+      const totalCells = cols * Math.max(rows, 4);
       let pos = rand(0, totalCells);
       let safety = 0;
       while (usedPos[pos] && safety < 100) { pos = rand(0, totalCells); safety++; }
       usedPos[pos] = true;
-      const row = Math.floor(pos / gridSize);
-      const col = pos % gridSize;
+      const row = Math.floor(pos / cols);
+      const col = pos % cols;
       const node = {
         id: fIdx + '-' + pos, type: tileType, zIndex: fIdx, index: pos,
         row: row, col: col,
-        top: centerY + (TILE_SIZE * row - (TILE_SIZE / 2) * fIdx),
-        left: centerX + (TILE_SIZE * col - (TILE_SIZE / 2) * fIdx),
+        top: startY + (tileSize * row - (tileSize / 2) * fIdx),
+        left: startX + (tileSize * col - (tileSize / 2) * fIdx),
         parents: [], state: 0
       };
       prevFloorNodes.forEach(function(prev) {
-        if (Math.abs(prev.top - node.top) < TILE_SIZE && Math.abs(prev.left - node.left) < TILE_SIZE) {
+        if (Math.abs(prev.top - node.top) < tileSize && Math.abs(prev.left - node.left) < tileSize) {
           prev.parents.push(node);
         }
       });
