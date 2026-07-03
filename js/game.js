@@ -4,11 +4,12 @@
 
 const TILES = ['\uD83C\uDC00','\uD83C\uDC01','\uD83C\uDC02','\uD83C\uDC03','\uD83C\uDC04','\uD83C\uDC05','\uD83C\uDC06','\uD83C\uDC07','\uD83C\uDC08','\uD83C\uDC09','\uD83C\uDC0A','\uD83C\uDC0B','\uD83C\uDC0C','\uD83C\uDC0D','\uD83C\uDC0E','\uD83C\uDC0F','\uD83C\uDC10','\uD83C\uDC11','\uD83C\uDC12','\uD83C\uDC13','\uD83C\uDC14','\uD83C\uDC15','\uD83C\uDC16','\uD83C\uDC17','\uD83C\uDC18','\uD83C\uDC19','\uD83C\uDC1A','\uD83C\uDC1B','\uD83C\uDC1C','\uD83C\uDC1D','\uD83C\uDC1E','\uD83C\uDC1F','\uD83C\uDC20','\uD83C\uDC21'];
 
+// Sheep-a-sheep level design:
+//   Level 1 = warm-up: small grid, mostly flat, few types
+//   Level 2 = insane: huge dense grid, multiple layers, lots of types + traps
 const LEVELS = [
-  // Level 1: dead easy — only 6 tile types, basically flat (1 layer), tiny pile
-  { cardNum: 6,  layerNum: 1, trap: false, name: 'Warm-up' },
-  // Level 2: insane — 14 types, 3 layers deep, trapped
-  { cardNum: 14, layerNum: 3, trap: true,  name: 'Insane' }
+  { cardNum: 6,  cols: 7, rows: 5, layers: 2, topClusters: 1, topSize: 6,  trap: false, name: 'Warm-up' },
+  { cardNum: 16, cols: 9, rows: 7, layers: 4, topClusters: 3, topSize: 30, trap: true,  name: 'Insane' }
 ];
 
 const SLOT_MAX = 7;
@@ -97,78 +98,118 @@ function initLevel(levelIdx) {
   const W = container.clientWidth;
   const H = container.clientHeight;
 
-  // Determine tile size that fits game area
-  const types = [];
-  for (let i = 0; i < cfg.cardNum; i++) types.push(i);
-  let pool = [];
-  for (let j = 0; j < 3 * cfg.layerNum; j++) pool = pool.concat(types);
-  if (cfg.trap && rand(0, 100) !== 50) pool.splice(pool.length - cfg.cardNum, cfg.cardNum);
-  pool = shuffle(pool);
-
-  // Calculate columns based on tile count - aim for square-ish layout
-  const totalTiles = pool.length;
-  const cols = Math.max(6, Math.ceil(Math.sqrt(totalTiles * 0.9)));
-  const rows = Math.ceil(totalTiles / cols);
-  // Reserve stacking offset for layers (each layer shifts by tileSize/2)
-  const stackShift = (cfg.layerNum - 1) * 0.5;
-  const totalColSpan = cols + stackShift;
-  const totalRowSpan = rows + stackShift;
-
-  // Fit tile size to game area
-  const tileSize = Math.max(28, Math.min(
-    Math.floor((W - 8) / totalColSpan),
-    Math.floor((H - 8) / totalRowSpan),
-    60
+  // Compute tile size so cols x rows + layer shift fits within W,H
+  const maxShift = (cfg.layers - 1) * 0.5;
+  const tileSize = Math.max(26, Math.min(
+    Math.floor((W - 8) / (cfg.cols + maxShift)),
+    Math.floor((H - 8) / (cfg.rows + maxShift)),
+    52
   ));
 
-  // Center grid horizontally, start from top of area
-  const gridWidth = cols * tileSize;
-  const startX = (W - gridWidth) / 2 + tileSize / 2;
-  const startY = tileSize / 2 + 4;
+  // Build pool: 3 copies of each tile type
+  const types = [];
+  for (let i = 0; i < cfg.cardNum; i++) { types.push(i); types.push(i); types.push(i); }
+  // Optional trap: drop pairs to leave some types unmatchable
+  if (cfg.trap && rand(0, 100) !== 50) {
+    const dropCount = Math.min(4, Math.floor(cfg.cardNum / 4));
+    const dropTypes = [];
+    while (dropTypes.length < dropCount) {
+      const t = rand(0, cfg.cardNum);
+      if (dropTypes.indexOf(t) === -1) dropTypes.push(t);
+    }
+    dropTypes.forEach(function(t) {
+      // remove 2 copies of t so it has only 1 left (unmatchable)
+      let removed = 0;
+      for (let i = types.length - 1; i >= 0 && removed < 2; i--) {
+        if (types[i] === t) { types.splice(i, 1); removed++; }
+      }
+    });
+  }
+  const pool = shuffle(types);
 
-  // Distribute tiles into layers
-  const floors = [];
-  let remaining = pool.slice();
-  let fIdx = 0;
-  while (remaining.length > 0) {
-    // Each layer gets at most cols * rows tiles, minimum cols tiles
-    const maxInFloor = Math.min(cols * rows, remaining.length);
-    const minInFloor = Math.min(Math.max(8, Math.floor(cols * 0.7)), maxInFloor);
-    const numInFloor = rand(minInFloor, maxInFloor + 1);
-    floors.push(remaining.splice(0, numInFloor));
-    fIdx++;
+  // Place each layer bottom-up: layer 0 = full base grid, layers 1+ = smaller clusters shifted up-left
+  function placeLayer(layerIdx) {
+    const shiftX = (tileSize / 2) * layerIdx;
+    const shiftY = (tileSize / 2) * layerIdx;
+    const layerNodes = [];
+    const isBase = layerIdx === 0;
+    const cellCols = isBase ? cfg.cols : Math.max(3, Math.floor(cfg.cols * 0.6));
+    const cellRows = isBase ? cfg.rows : Math.max(3, Math.floor(cfg.rows * 0.7));
+    const capacity = cellCols * cellRows;
+    const wantCount = isBase
+      ? Math.min(capacity, pool.length)
+      : Math.min(cfg.topSize, pool.length, capacity);
+    if (wantCount <= 0) return [];
+    // All grid cells, shuffled
+    const allCells = [];
+    for (let r = 0; r < cellRows; r++) for (let c = 0; c < cellCols; c++) allCells.push(r * cellCols + c);
+    shuffle(allCells);
+    const baseGridW = cfg.cols * tileSize;
+    const baseStartX = (W - baseGridW) / 2 + tileSize / 2;
+    const baseStartY = 8 + tileSize / 2;
+    for (let i = 0; i < allCells.length && layerNodes.length < wantCount && pool.length > 0; i++) {
+      const cell = allCells[i];
+      const row = Math.floor(cell / cellCols);
+      const col = cell % cellCols;
+      const top = baseStartY + tileSize * row - shiftY;
+      const left = baseStartX + tileSize * col - shiftX;
+      const tileType = pool.shift();
+      const node = {
+        id: layerIdx + '-' + cell + '-' + rand(0, 9999),
+        type: tileType,
+        zIndex: 10 + layerIdx,
+        layer: layerIdx,
+        top: top,
+        left: left,
+        parents: [],
+        state: 0
+      };
+      layerNodes.push(node);
+    }
+    return layerNodes;
   }
 
-  let prevFloorNodes = [];
-  floors.forEach(function(floorTiles, fIdx) {
-    const usedPos = {};
-    const floorNodes = [];
-    floorTiles.forEach(function(tileType) {
-      // Pick a random grid position within current layer's row*col grid
-      const totalCells = cols * Math.max(rows, 4);
-      let pos = rand(0, totalCells);
-      let safety = 0;
-      while (usedPos[pos] && safety < 100) { pos = rand(0, totalCells); safety++; }
-      usedPos[pos] = true;
-      const row = Math.floor(pos / cols);
-      const col = pos % cols;
-      const node = {
-        id: fIdx + '-' + pos, type: tileType, zIndex: fIdx, index: pos,
-        row: row, col: col,
-        top: startY + (tileSize * row - (tileSize / 2) * fIdx),
-        left: startX + (tileSize * col - (tileSize / 2) * fIdx),
-        parents: [], state: 0
-      };
-      prevFloorNodes.forEach(function(prev) {
-        if (Math.abs(prev.top - node.top) < tileSize && Math.abs(prev.left - node.left) < tileSize) {
-          prev.parents.push(node);
+  const allLayers = [];
+  for (let L = 0; L < cfg.layers; L++) {
+    const ln = placeLayer(L);
+    allLayers.push(ln);
+  }
+
+  // Build parent relationships: node N (upper layer) sits ON TOP of node M (lower layer)
+  // if their positions are within tileSize*0.6 of each other.
+  // -> M.parents.push(N) (M has N pressing on it; when N.state >= 2 M becomes clickable)
+  for (let L = 1; L < allLayers.length; L++) {
+    const upper = allLayers[L];
+    const lower = allLayers[L - 1];
+    for (let i = 0; i < upper.length; i++) {
+      const node = upper[i];
+      for (let j = 0; j < lower.length; j++) {
+        const below = lower[j];
+        if (Math.abs(below.top - node.top) < tileSize * 0.6 &&
+            Math.abs(below.left - node.left) < tileSize * 0.6) {
+          below.parents.push(node);
         }
-      });
-      floorNodes.push(node);
-    });
-    state.nodes = state.nodes.concat(floorNodes);
-    prevFloorNodes = floorNodes;
-  });
+      }
+    }
+    // Also chain non-adjacent layers (L-2, L-3...) so removing multiple upper tiles
+    // can uncover deep ones
+    for (let lowerL = 0; lowerL < L - 1; lowerL++) {
+      const deeper = allLayers[lowerL];
+      for (let i = 0; i < upper.length; i++) {
+        const node = upper[i];
+        for (let j = 0; j < deeper.length; j++) {
+          const below = deeper[j];
+          if (Math.abs(below.top - node.top) < tileSize * 0.8 &&
+              Math.abs(below.left - node.left) < tileSize * 0.8) {
+            // only add if not already there
+            if (below.parents.indexOf(node) === -1) below.parents.push(node);
+          }
+        }
+      }
+    }
+  }
+
+  allLayers.forEach(function(ln) { state.nodes = state.nodes.concat(ln); });
   updateStates();
   document.getElementById('level-name').textContent = cfg.name;
   document.getElementById('level-num').textContent = 'Level ' + (levelIdx + 1) + ' / ' + LEVELS.length;
