@@ -4,12 +4,81 @@
 
 const TILES = ['\uD83C\uDC00','\uD83C\uDC01','\uD83C\uDC02','\uD83C\uDC03','\uD83C\uDC04','\uD83C\uDC05','\uD83C\uDC06','\uD83C\uDC07','\uD83C\uDC08','\uD83C\uDC09','\uD83C\uDC0A','\uD83C\uDC0B','\uD83C\uDC0C','\uD83C\uDC0D','\uD83C\uDC0E','\uD83C\uDC0F','\uD83C\uDC10','\uD83C\uDC11','\uD83C\uDC12','\uD83C\uDC13','\uD83C\uDC14','\uD83C\uDC15','\uD83C\uDC16','\uD83C\uDC17','\uD83C\uDC18','\uD83C\uDC19','\uD83C\uDC1A','\uD83C\uDC1B','\uD83C\uDC1C','\uD83C\uDC1D','\uD83C\uDC1E','\uD83C\uDC1F','\uD83C\uDC20','\uD83C\uDC21'];
 
-// Sheep-a-sheep level design:
-//   Level 1 = warm-up: small grid, mostly flat, few types
-//   Level 2 = insane: huge dense grid, multiple layers, lots of types + traps
+// Sheep-a-sheep style: hand-designed level data (inspired by qierkang/yang-game)
+// Each entry is [layer, row, col, tileType].
+// tileType references TILES[]. poolSize = number of copies of each tileType.
+//
+//   Level 1 (Warm-up): 39 tiles, single 9x5 layer, 13 unique types, every type has 3 copies
+//   Level 2 (Insane):  ~150 tiles, 3 stacked layers, dense grid, max 20 unique types
 const LEVELS = [
-  { cardNum: 6,  cols: 7, rows: 5, layers: 2, topClusters: 1, topSize: 6,  trap: false, name: 'Warm-up' },
-  { cardNum: 16, cols: 9, rows: 7, layers: 4, topClusters: 3, topSize: 30, trap: true,  name: 'Insane' }
+  {
+    name: 'Warm-up',
+    widthNum: 9,
+    heightNum: 5,
+    poolSize: 3,
+    // 13 types x 3 copies = 39 total. Filled in a flat 9x5 grid (45 cells) with 6 cells left empty
+    tiles: [
+      // layer 0, flat base, types 0..12 fill almost everything
+      // row 0
+      [0,0,0],[0,0,1],[0,0,2],[0,0,3],[0,0,4],[0,0,5],[0,0,6],[0,0,7],[0,0,8],
+      // row 1
+      [0,1,0],[0,1,1],[0,1,2],[0,1,3],[0,1,4],[0,1,5],[0,1,6],[0,1,7],[0,1,8],
+      // row 2
+      [0,2,0],[0,2,1],[0,2,2],[0,2,3],[0,2,4],[0,2,5],[0,2,6],[0,2,7],[0,2,8],
+      // row 3
+      [0,3,0],[0,3,1],[0,3,2],[0,3,3],[0,3,4],[0,3,5],[0,3,6],[0,3,7],[0,3,8],
+      // row 4 (incomplete on purpose)
+      [0,4,0],[0,4,1],[0,4,2],[0,4,3],[0,4,4],[0,4,5],[0,4,6],[0,4,7],[0,4,8],
+      // layer 1: a few tiles stacked on top in spots (so a few are "locked" until you remove what's beneath)
+      [1,1,3],[1,1,4],[1,2,4],[1,2,5],[1,3,2],[1,3,5]
+    ]
+  },
+  {
+    name: 'Insane',
+    widthNum: 9,
+    heightNum: 7,
+    // Each type has 9 copies = 3 triples = 27 tiles per type * 15 types = 405 → too many
+    // We have 126 tiles total (63 base + 33 layer1 + 20 layer2 + 10 layer3)
+    // 15 types * ~8.4 copies each → use 9 copies per type for 15 types = 135. Plenty.
+    poolSize: 9,
+    cardNum: 15,
+    tiles: [
+      // === Layer 0: dense base grid 9x7 = 63 tiles, all filled ===
+      [0,0,0],[0,0,1],[0,0,2],[0,0,3],[0,0,4],[0,0,5],[0,0,6],[0,0,7],[0,0,8],
+      [0,1,0],[0,1,1],[0,1,2],[0,1,3],[0,1,4],[0,1,5],[0,1,6],[0,1,7],[0,1,8],
+      [0,2,0],[0,2,1],[0,2,2],[0,2,3],[0,2,4],[0,2,5],[0,2,6],[0,2,7],[0,2,8],
+      [0,3,0],[0,3,1],[0,3,2],[0,3,3],[0,3,4],[0,3,5],[0,3,6],[0,3,7],[0,3,8],
+      [0,4,0],[0,4,1],[0,4,2],[0,4,3],[0,4,4],[0,4,5],[0,4,6],[0,4,7],[0,4,8],
+      [0,5,0],[0,5,1],[0,5,2],[0,5,3],[0,5,4],[0,5,5],[0,5,6],[0,5,7],[0,5,8],
+      [0,6,0],[0,6,1],[0,6,2],[0,6,3],[0,6,4],[0,6,5],[0,6,6],[0,6,7],[0,6,8],
+
+      // === Layer 1: 30 tiles stacked on top, scattered ===
+      [1,0,1],[1,0,4],[1,0,7],
+      [1,1,0],[1,1,2],[1,1,5],[1,1,8],
+      [1,2,1],[1,2,4],[1,2,7],
+      [1,3,0],[1,3,2],[1,3,5],[1,3,8],
+      [1,4,1],[1,4,4],[1,4,7],
+      [1,5,0],[1,5,2],[1,5,5],[1,5,8],
+      [1,6,1],[1,6,4],[1,6,7],
+
+      // === Layer 2: 21 tiles - sparse mid-stack ===
+      [2,1,1],[2,1,4],[2,1,7],
+      [2,2,2],[2,2,5],
+      [2,3,1],[2,3,4],[2,3,7],
+      [2,4,2],[2,4,5],
+      [2,5,1],[2,5,4],[2,5,7],
+
+      // top of stack (layer 2 in row 3)
+      [2,0,4],[2,3,3],[2,3,5],[2,6,4],
+      [2,2,7],[2,4,7],
+
+      // === Layer 3: 12 tiles - dense top cluster ===
+      [3,2,3],[3,2,4],[3,2,5],
+      [3,3,3],[3,3,4],[3,3,5],
+      [3,4,3],[3,4,4],[3,4,5],
+      [4,3,4]
+    ]
+  }
 ];
 
 const SLOT_MAX = 7;
@@ -98,124 +167,108 @@ function initLevel(levelIdx) {
   const W = container.clientWidth;
   const H = container.clientHeight;
 
-  // Compute tile size so cols x rows + layer shift fits within W,H
-  const maxShift = (cfg.layers - 1) * 0.5;
-  const tileSize = Math.max(26, Math.min(
-    Math.floor((W - 8) / (cfg.cols + maxShift)),
-    Math.floor((H - 8) / (cfg.rows + maxShift)),
-    52
-  ));
+  // Each cell uses ~ (W / widthNum) pixels horizontally.
+  // We size tiles so the entire grid + a small margin fits the play area.
+  const usableW = W - 8;
+  const usableH = H - 8;
+  // Reserve room so the upper-most stacked tiles don't get clipped at the top.
+  // Each layer above base shifts by (~halfTile) up. Use layers as upper estimate.
+  const upperLayers = cfg.tiles.reduce(function(m, t) { return Math.max(m, t[0]); }, 0);
+  const tileW = Math.max(22, Math.floor(usableW / cfg.widthNum));
+  const tileH = Math.max(24, Math.floor(usableH / (cfg.heightNum + upperLayers * 0.5)));
 
-  // Build pool: 3 copies of each tile type
-  const types = [];
-  for (let i = 0; i < cfg.cardNum; i++) { types.push(i); types.push(i); types.push(i); }
-  // Optional trap: drop pairs to leave some types unmatchable
-  if (cfg.trap && rand(0, 100) !== 50) {
-    const dropCount = Math.min(4, Math.floor(cfg.cardNum / 4));
-    const dropTypes = [];
-    while (dropTypes.length < dropCount) {
-      const t = rand(0, cfg.cardNum);
-      if (dropTypes.indexOf(t) === -1) dropTypes.push(t);
+  // Build the tile pool: cfg.cardNum types × cfg.poolSize copies of each.
+  //   poolSize = 3  → standard match-3
+  //   poolSize > 3 → "each type forms multiple triples" → tougher pool
+  const pool = [];
+  for (let i = 0; i < (cfg.cardNum || 0); i++) {
+    for (let k = 0; k < (cfg.poolSize || 3); k++) pool.push(i);
+  }
+
+  // Truncate pool to actual tile count if too many.
+  // Random distribution: each tile type gets assigned from the pool (round-robin on types)
+  // We don't need shuffle-the-pool correctness — just enough to fill the design.
+  let poolIdx = 0;
+  function nextType() {
+    if (poolIdx >= pool.length) {
+      // wrap and extend pool if exhausted (shouldn't normally happen)
+      const i = poolIdx % pool.length;
+      poolIdx++;
+      return pool[i];
     }
-    dropTypes.forEach(function(t) {
-      // remove 2 copies of t so it has only 1 left (unmatchable)
-      let removed = 0;
-      for (let i = types.length - 1; i >= 0 && removed < 2; i--) {
-        if (types[i] === t) { types.splice(i, 1); removed++; }
-      }
+    return pool[poolIdx++];
+  }
+
+  // Convert cfg.tiles (level data) into node objects with screen positions.
+  // tile = [layer, row, col] — we pick type from pool in order (deterministic).
+  // Shuffle the pool once so the assignment is random but reproducible.
+  const shuffled = shuffle(pool.slice());
+  let shuffledIdx = 0;
+  function drawType() {
+    if (shuffledIdx >= shuffled.length) shuffledIdx = 0;
+    return shuffled[shuffledIdx++];
+  }
+
+  // Layout: per-layer. Layer 0 is the base grid filling widthNum × heightNum.
+  // Upper layers shift tileW/2 to the left and tileH/2 up per layer step,
+  // mimicking real mahjong stacking (each tile rests on the seam between two tiles below).
+  function tilePos(layer, row, col) {
+    const shiftX = (tileW / 2) * layer;
+    const shiftY = (tileH / 2) * layer;
+    // Center the base grid horizontally; align its top slightly below header.
+    const baseGridW = cfg.widthNum * tileW;
+    const baseStartX = (W - baseGridW) / 2 + tileW / 2;
+    const baseStartY = tileH / 2 + 8;
+    return {
+      left: baseStartX + tileW * col - shiftX,
+      top:  baseStartY + tileH * row - shiftY
+    };
+  }
+
+  cfg.tiles.forEach(function(t) {
+    const layer = t[0], row = t[1], col = t[2];
+    const pos = tilePos(layer, row, col);
+    state.nodes.push({
+      id: layer + '-' + row + '-' + col,
+      type: drawType(),
+      zIndex: 10 + layer,
+      layer: layer,
+      row: row,
+      col: col,
+      top: pos.top,
+      left: pos.left,
+      parents: [],
+      state: 0
     });
-  }
-  const pool = shuffle(types);
+  });
 
-  // Place each layer bottom-up: layer 0 = full base grid, layers 1+ = smaller clusters shifted up-left
-  function placeLayer(layerIdx) {
-    const shiftX = (tileSize / 2) * layerIdx;
-    const shiftY = (tileSize / 2) * layerIdx;
-    const layerNodes = [];
-    const isBase = layerIdx === 0;
-    const cellCols = isBase ? cfg.cols : Math.max(3, Math.floor(cfg.cols * 0.6));
-    const cellRows = isBase ? cfg.rows : Math.max(3, Math.floor(cfg.rows * 0.7));
-    const capacity = cellCols * cellRows;
-    const wantCount = isBase
-      ? Math.min(capacity, pool.length)
-      : Math.min(cfg.topSize, pool.length, capacity);
-    if (wantCount <= 0) return [];
-    // All grid cells, shuffled
-    const allCells = [];
-    for (let r = 0; r < cellRows; r++) for (let c = 0; c < cellCols; c++) allCells.push(r * cellCols + c);
-    shuffle(allCells);
-    const baseGridW = cfg.cols * tileSize;
-    const baseStartX = (W - baseGridW) / 2 + tileSize / 2;
-    const baseStartY = 8 + tileSize / 2;
-    for (let i = 0; i < allCells.length && layerNodes.length < wantCount && pool.length > 0; i++) {
-      const cell = allCells[i];
-      const row = Math.floor(cell / cellCols);
-      const col = cell % cellCols;
-      const top = baseStartY + tileSize * row - shiftY;
-      const left = baseStartX + tileSize * col - shiftX;
-      const tileType = pool.shift();
-      const node = {
-        id: layerIdx + '-' + cell + '-' + rand(0, 9999),
-        type: tileType,
-        zIndex: 10 + layerIdx,
-        layer: layerIdx,
-        top: top,
-        left: left,
-        parents: [],
-        state: 0
-      };
-      layerNodes.push(node);
-    }
-    return layerNodes;
-  }
-
-  const allLayers = [];
-  for (let L = 0; L < cfg.layers; L++) {
-    const ln = placeLayer(L);
-    allLayers.push(ln);
-  }
-
-  // Build parent relationships: node N (upper layer) sits ON TOP of node M (lower layer)
-  // if their positions are within tileSize*0.6 of each other.
-  // -> M.parents.push(N) (M has N pressing on it; when N.state >= 2 M becomes clickable)
-  for (let L = 1; L < allLayers.length; L++) {
-    const upper = allLayers[L];
-    const lower = allLayers[L - 1];
-    for (let i = 0; i < upper.length; i++) {
-      const node = upper[i];
-      for (let j = 0; j < lower.length; j++) {
-        const below = lower[j];
-        if (Math.abs(below.top - node.top) < tileSize * 0.6 &&
-            Math.abs(below.left - node.left) < tileSize * 0.6) {
-          below.parents.push(node);
-        }
-      }
-    }
-    // Also chain non-adjacent layers (L-2, L-3...) so removing multiple upper tiles
-    // can uncover deep ones
-    for (let lowerL = 0; lowerL < L - 1; lowerL++) {
-      const deeper = allLayers[lowerL];
-      for (let i = 0; i < upper.length; i++) {
-        const node = upper[i];
-        for (let j = 0; j < deeper.length; j++) {
-          const below = deeper[j];
-          if (Math.abs(below.top - node.top) < tileSize * 0.8 &&
-              Math.abs(below.left - node.left) < tileSize * 0.8) {
-            // only add if not already there
-            if (below.parents.indexOf(node) === -1) below.parents.push(node);
-          }
-        }
+  // Build "is covered by upper-layer tile at same position" check.
+  // We use a half-tile radius (~0.6 of tileW) for "same column/row alignment".
+  const coverDist = 0.6;
+  for (let i = 0; i < state.nodes.length; i++) {
+    const self = state.nodes[i];
+    for (let j = 0; j < state.nodes.length; j++) {
+      if (i === j) continue;
+      const upper = state.nodes[j];
+      if (upper.layer <= self.layer) continue;
+      // Is upper within coverDist of self's grid cell (row, col)?
+      // (We don't compare screen positions because layers are shifted by exactly tileW/2 each layer.)
+      const dRow = Math.abs(upper.row - self.row);
+      const dCol = Math.abs(upper.col - self.col);
+      // For layer difference > 1, expand the tolerance accordingly.
+      const layerDiff = upper.layer - self.layer;
+      const tol = coverDist + 0.4 * (layerDiff - 1);
+      if (dRow <= tol && dCol <= tol) {
+        self.parents.push(upper);
       }
     }
   }
 
-  allLayers.forEach(function(ln) { state.nodes = state.nodes.concat(ln); });
   updateStates();
   document.getElementById('level-name').textContent = cfg.name;
   document.getElementById('level-num').textContent = 'Level ' + (levelIdx + 1) + ' / ' + LEVELS.length;
   render();
 }
-
 function render() {
   const area = document.getElementById('game-area');
   Array.from(area.querySelectorAll('.tile')).forEach(function(c) { c.remove(); });
