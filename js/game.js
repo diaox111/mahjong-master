@@ -255,35 +255,28 @@ function initLevel(levelIdx) {
 
   // Build "is covered by upper-layer tile at same position" check.
   // We use a half-tile radius (~0.6 of tileW) for "same column/row alignment".
-  // Each layer in our config shifts position by ~0.5 grid units in both row and col
-  // (the half-tile offset). So a tile at layer 1, col c visually sits on the seam between
-  // base col c-1 and col c. Therefore layer 1 covers BOTH base cols — i.e. dCol <= 0.5
-  // sees two candidates.
-  //
-  // For a tile that's visually at (row, col), an upper tile at (row + Δrow, col + Δcol)
-  // covers it when |Δrow| < 0.5 and |Δcol| < 0.5 (within one grid cell of overlap).
-  // We round to nearest 0.5 because our layer offsets are exact halves.
+  // Compute each node's visual (row, col) — accounting for the half-tile shift per layer.
+  // Layer L sits at visual position (row - L/2, col - L/2) in cell units.
+  // An upper tile covers self when upper's visual cell CONTAINS self's CENTER.
+  // Equivalently: upper.vis in [self.vis - 0.5, self.vis + 0.5].
+  for (let i = 0; i < state.nodes.length; i++) {
+    const self = state.nodes[i];
+    self.visRow = self.row - 0.5 * self.layer;
+    self.visCol = self.col - 0.5 * self.layer;
+  }
   for (let i = 0; i < state.nodes.length; i++) {
     const self = state.nodes[i];
     for (let j = 0; j < state.nodes.length; j++) {
       if (i === j) continue;
       const upper = state.nodes[j];
       if (upper.layer <= self.layer) continue;
-      const layerDiff = upper.layer - self.layer;
-      // Per-layer half-tile offsets compound, but a tile only directly "covers" things
-      // that overlap its visual footprint. Half-tile overlap per layer difference
-      // gives a margin of (layerDiff*0.5) before losing all overlap.
-      const tol = 0.5;  // direct cell-overlap threshold
-      const dRow = Math.abs(upper.row - self.row);
-      const dCol = Math.abs(upper.col - self.col);
-      // upper's visual offset relative to layer 0: (row - layer*0.5, col - layer*0.5)
-      // So its true screen cell compared to self's [self.row, self.col]:
-      const uRow = upper.row - 0.5 * upper.layer;
-      const uCol = upper.col - 0.5 * upper.layer;
-      const sRow = self.row;
-      const sCol = self.col;
-      // if either axis differs by less than 1 full grid cell, they overlap
-      if (Math.abs(uRow - sRow) < 1 && Math.abs(uCol - sCol) < 1) {
+      // upper's visual cell range: [vis - 0.5, vis + 0.5]
+      // If self's visual center is inside that, upper covers self.
+      const uR = upper.visRow;
+      const uC = upper.visCol;
+      const sR = self.visRow;
+      const sC = self.visCol;
+      if (Math.abs(sR - uR) <= 0.5 && Math.abs(sC - uC) <= 0.5) {
         self.parents.push(upper);
       }
     }
