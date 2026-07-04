@@ -18,18 +18,16 @@ const TILES = ['\uD83C\uDC00','\uD83C\uDC01','\uD83C\uDC02','\uD83C\uDC03','\uD8
 const LEVELS = [
   {
     name: 'Warm-up',
-    widthNum: 6,
+    widthNum: 7,
     heightNum: 3,
     cardNum: 7,
-    cardsEach: 3,   // 7 types * 3 copies = 21 tiles exactly
-    layers: 2,
+    cardsEach: 3,   // 7 types x 3 copies = 21 tiles, all flat (no stacking)
+    layers: 1,
     tiles: [
-      // Layer 0: 6x3 = 18 base tiles (all of them, flat)
-      [0,0,0],[0,0,1],[0,0,2],[0,0,3],[0,0,4],[0,0,5],
-      [0,1,0],[0,1,1],[0,1,2],[0,1,3],[0,1,4],[0,1,5],
-      [0,2,0],[0,2,1],[0,2,2],[0,2,3],[0,2,4],[0,2,5],
-      // Layer 1: 3 stacked tiles on top center
-      [1,1,2],[1,1,3],[1,1,4]
+      // Single layer: 7x3 = 21 tiles, all clickable from start
+      [0,0,0],[0,0,1],[0,0,2],[0,0,3],[0,0,4],[0,0,5],[0,0,6],
+      [0,1,0],[0,1,1],[0,1,2],[0,1,3],[0,1,4],[0,1,5],[0,1,6],
+      [0,2,0],[0,2,1],[0,2,2],[0,2,3],[0,2,4],[0,2,5],[0,2,6]
     ]
   },
   {name: 'Insane',
