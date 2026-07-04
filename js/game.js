@@ -176,9 +176,12 @@ function initLevel(levelIdx) {
   // entire grid (including upper-layer shifts) fits inside the play area.
   // Reserve vertical room so the topmost stacked layer doesn't get clipped.
   const upperLayers = cfg.tiles.reduce(function(m, t) { return Math.max(m, t[0]); }, 0);
-  const verticalShiftTotal = (upperLayers) * 0.5;  // half-tile per upper layer
-  const maxW = Math.floor((W - 16) / cfg.widthNum);          // 8px margin each side
-  const maxH = Math.floor((H - 24) / (cfg.heightNum + verticalShiftTotal));
+  // Upper layers shift left AND up by half-tile per layer. So the total visible grid
+  // extends ~upperLayers/2 cells beyond the base grid on the LEFT and TOP.
+  // Account for that in both dimensions so the layout doesn't overflow the play area.
+  const halfLayers = upperLayers * 0.5;
+  const maxW = Math.floor((W - 16) / (cfg.widthNum + halfLayers));
+  const maxH = Math.floor((H - 32) / (cfg.heightNum + halfLayers));
   const tileSize = Math.max(22, Math.min(maxW, maxH, 44));
   const tileW = tileSize;
   const tileH = tileSize;
@@ -215,20 +218,36 @@ function initLevel(levelIdx) {
     return shuffled[shuffledIdx++];
   }
 
-  // Layout: per-layer. Layer 0 is the base grid filling widthNum × heightNum.
-  // Upper layers shift tileW/2 to the left and tileH/2 up per layer step,
-  // mimicking real mahjong stacking (each tile rests on the seam between two tiles below).
-  function tilePos(layer, row, col) {
+  // Centering strategy (handles upper-layer shifts correctly):
+  //   1. Compute each tile's raw top-left assuming the base grid origin is (0, 0).
+  //   2. Compute the bounding box (min/max left/top) of all raw positions.
+  //   3. Compute offsets to center that bounding box inside the play area (W x H).
+  //   4. tilePos() returns the final top-left, applying those offsets.
+  function rawPos(layer, row, col) {
     const shiftX = (tileW / 2) * layer;
     const shiftY = (tileH / 2) * layer;
-    // Center the base grid horizontally; align its top slightly below header.
-    const baseGridW = cfg.widthNum * tileW;
-    const baseStartX = (W - baseGridW) / 2 + tileW / 2;
-    const baseStartY = tileH / 2 + 8;
     return {
-      left: baseStartX + tileW * col - shiftX,
-      top:  baseStartY + tileH * row - shiftY
+      left: tileW * col - shiftX,
+      top:  tileH * row - shiftY
     };
+  }
+
+  let minL = Infinity, minT = Infinity, maxR = -Infinity, maxB = -Infinity;
+  cfg.tiles.forEach(function(t) {
+    const p = rawPos(t[0], t[1], t[2]);
+    if (p.left < minL) minL = p.left;
+    if (p.top  < minT) minT = p.top;
+    if (p.left + tileW > maxR) maxR = p.left + tileW;
+    if (p.top  + tileH > maxB) maxB = p.top  + tileH;
+  });
+  const layoutW = maxR - minL;
+  const layoutH = maxB - minT;
+  const offsetX = (W - layoutW) / 2 - minL;
+  const offsetY = (H - layoutH) / 2 - minT;
+
+  function tilePos(layer, row, col) {
+    const p = rawPos(layer, row, col);
+    return { left: p.left + offsetX, top: p.top + offsetY };
   }
 
   cfg.tiles.forEach(function(t) {
