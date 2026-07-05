@@ -15,81 +15,160 @@ const TILES = ['\uD83C\uDC00','\uD83C\uDC01','\uD83C\uDC02','\uD83C\uDC03','\uD8
 //   layers = max stack depth
 //   cardsEach = copies of each tile type (3 = match-3 clean; higher = tougher)
 //   cardNum = distinct tile types
+
+// === REAL Sheep-a-Sheep level data from qierkang/yang-game ===
+// Source: github.com/qierkang/yang-game + yang-server
+const MIN_BLOCK_NUM = 8;
+
 const LEVELS = [
-  {
-    name: 'Warm-up',
-    widthNum: 7,
-    heightNum: 3,
-    cardNum: 7,
-    cardsEach: 3,  // 7 types x 3 copies = 21
-    layers: 2,
+  { name: 'Warm-up', widthNum: 8, heightNum: 10,
+    blockTypeData: {'8':2,'9':2,'10':2,'11':2,'15':2,'16':2,'17':2,'18':2,'19':3,'20':2,'21':2},
     tiles: [
-      // Layer 0: 7x3 = 21 positions. Upper tile covers base (0,0,0) only (edge of grid),
-      // so we leave (0,0,0) empty and fill the remaining 20 spots. Total = 20 base + 1 upper = 21.
-      // The upper tile is freely clickable (nothing is on top of IT).
-      // When clicked, its type appears 2 more times elsewhere in the base -> 3-of-a-kind match possible.
-      [0,0,1],[0,0,2],[0,0,3],[0,0,4],[0,0,5],[0,0,6],
-      [0,1,0],[0,1,1],[0,1,2],[0,1,3],[0,1,4],[0,1,5],[0,1,6],
-      [0,2,0],[0,2,1],[0,2,2],[0,2,3],[0,2,4],[0,2,5],[0,2,6],
-      // Layer 1: single tile in top-left corner where it covers exactly one base position
-      [1,0,0]
+      [1,0,24],
+      [1,8,24],
+      [1,8,32],
+      [1,16,8],
+      [1,16,16],
+      [1,16,40],
+      [1,24,8],
+      [1,24,16],
+      [1,24,32],
+      [1,24,40],
+      [1,32,16],
+      [1,32,24],
+      [1,32,32],
+      [1,40,8],
+      [1,40,24],
+      [1,40,32],
+      [2,4,28],
+      [2,12,20],
+      [2,20,12],
+      [2,28,20],
+      [2,36,28],
+      [2,52,8],
+      [2,52,16],
+      [2,52,32],
+      [2,52,40],
+      [2,52,48],
+      [2,55,8],
+      [2,55,48],
+      [3,8,24],
+      [3,8,32],
+      [3,16,16],
+      [3,16,24],
+      [3,16,32],
+      [3,16,40],
+      [3,24,16],
+      [3,24,32],
+      [3,29,12],
+      [3,29,28],
+      [3,29,36],
+      [3,29,52],
+      [4,12,20],
+      [4,12,28],
+      [4,12,36],
+      [4,20,20],
+      [4,20,36],
+      [4,51,20],
+      [4,51,44],
+      [4,54,12],
+      [4,54,28],
+      [4,54,36],
+      [4,54,52],
+      [4,57,16],
+      [5,16,24],
+      [5,16,32],
+      [5,24,24],
+      [5,24,32],
+      [5,56,8],
+      [5,56,16],
+      [5,56,40],
+      [5,56,48],
+      [6,20,28],
+      [6,57,8],
+      [6,57,16],
+      [6,57,40],
+      [6,57,48],
+      [7,58,8],
+      [7,58,16],
+      [7,58,40],
+      [7,58,48],
     ]
   },
-  {name: 'Insane',
-    widthNum: 13,
-    heightNum: 10,
-    cardNum: 20,
-    cardsEach: 18,  // 20 * 18 = 360; we use ~220 tiles so plenty of triples per type
-    layers: 6,
+  { name: 'Insane', widthNum: 8, heightNum: 10,
+    blockTypeData: {'8':2,'9':2,'15':3,'16':3,'17':3,'18':3,'19':2,'20':3,'21':3},
     tiles: [
-      // Layer 0: 130 tiles
-      [0,0,0],[0,0,1],[0,0,2],[0,0,3],[0,0,4],[0,0,5],[0,0,6],[0,0,7],[0,0,8],
-      [0,0,9],[0,0,10],[0,0,11],[0,0,12],[0,1,0],[0,1,1],[0,1,2],[0,1,3],[0,1,4],
-      [0,1,5],[0,1,6],[0,1,7],[0,1,8],[0,1,9],[0,1,10],[0,1,11],[0,1,12],[0,2,0],
-      [0,2,1],[0,2,2],[0,2,3],[0,2,4],[0,2,5],[0,2,6],[0,2,7],[0,2,8],[0,2,9],
-      [0,2,10],[0,2,11],[0,2,12],[0,3,0],[0,3,1],[0,3,2],[0,3,3],[0,3,4],[0,3,5],
-      [0,3,6],[0,3,7],[0,3,8],[0,3,9],[0,3,10],[0,3,11],[0,3,12],[0,4,0],[0,4,1],
-      [0,4,2],[0,4,3],[0,4,4],[0,4,5],[0,4,6],[0,4,7],[0,4,8],[0,4,9],[0,4,10],
-      [0,4,11],[0,4,12],[0,5,0],[0,5,1],[0,5,2],[0,5,3],[0,5,4],[0,5,5],[0,5,6],
-      [0,5,7],[0,5,8],[0,5,9],[0,5,10],[0,5,11],[0,5,12],[0,6,0],[0,6,1],[0,6,2],
-      [0,6,3],[0,6,4],[0,6,5],[0,6,6],[0,6,7],[0,6,8],[0,6,9],[0,6,10],[0,6,11],
-      [0,6,12],[0,7,0],[0,7,1],[0,7,2],[0,7,3],[0,7,4],[0,7,5],[0,7,6],[0,7,7],
-      [0,7,8],[0,7,9],[0,7,10],[0,7,11],[0,7,12],[0,8,0],[0,8,1],[0,8,2],[0,8,3],
-      [0,8,4],[0,8,5],[0,8,6],[0,8,7],[0,8,8],[0,8,9],[0,8,10],[0,8,11],[0,8,12],
-      [0,9,0],[0,9,1],[0,9,2],[0,9,3],[0,9,4],[0,9,5],[0,9,6],[0,9,7],[0,9,8],
-      [0,9,9],[0,9,10],[0,9,11],[0,9,12],
-      // Layer 1: 70 tiles
-      [1,0,0],[1,0,2],[1,0,4],[1,0,6],[1,0,8],[1,0,10],[1,0,12],[1,1,0],[1,1,2],
-      [1,1,4],[1,1,6],[1,1,8],[1,1,10],[1,1,12],[1,2,0],[1,2,2],[1,2,4],[1,2,6],
-      [1,2,8],[1,2,10],[1,2,12],[1,3,0],[1,3,2],[1,3,4],[1,3,6],[1,3,8],[1,3,10],
-      [1,3,12],[1,4,0],[1,4,2],[1,4,4],[1,4,6],[1,4,8],[1,4,10],[1,4,12],[1,5,0],
-      [1,5,2],[1,5,4],[1,5,6],[1,5,8],[1,5,10],[1,5,12],[1,6,0],[1,6,2],[1,6,4],
-      [1,6,6],[1,6,8],[1,6,10],[1,6,12],[1,7,0],[1,7,2],[1,7,4],[1,7,6],[1,7,8],
-      [1,7,10],[1,7,12],[1,8,0],[1,8,2],[1,8,4],[1,8,6],[1,8,8],[1,8,10],[1,8,12],
-      [1,9,0],[1,9,2],[1,9,4],[1,9,6],[1,9,8],[1,9,10],[1,9,12],
-      // Layer 2: 54 tiles
-      [2,0,1],[2,0,3],[2,0,5],[2,0,7],[2,0,9],[2,0,11],[2,1,1],[2,1,3],[2,1,5],
-      [2,1,7],[2,1,9],[2,1,11],[2,2,1],[2,2,3],[2,2,5],[2,2,7],[2,2,9],[2,2,11],
-      [2,3,1],[2,3,3],[2,3,5],[2,3,7],[2,3,9],[2,3,11],[2,4,1],[2,4,3],[2,4,5],
-      [2,4,7],[2,4,9],[2,4,11],[2,5,1],[2,5,3],[2,5,5],[2,5,7],[2,5,9],[2,5,11],
-      [2,6,1],[2,6,3],[2,6,5],[2,6,7],[2,6,9],[2,6,11],[2,7,1],[2,7,3],[2,7,5],
-      [2,7,7],[2,7,9],[2,7,11],[2,8,1],[2,8,3],[2,8,5],[2,8,7],[2,8,9],[2,8,11],
-      // Layer 3: 28 tiles
-      [3,3,3],[3,3,4],[3,3,5],[3,3,6],[3,3,7],[3,3,8],[3,3,9],[3,4,3],[3,4,4],
-      [3,4,5],[3,4,6],[3,4,7],[3,4,8],[3,4,9],[3,5,3],[3,5,4],[3,5,5],[3,5,6],
-      [3,5,7],[3,5,8],[3,5,9],[3,6,3],[3,6,4],[3,6,5],[3,6,6],[3,6,7],[3,6,8],
-      [3,6,9],
-      // Layer 4: 15 tiles
-      [4,4,4],[4,4,5],[4,4,6],[4,4,7],[4,4,8],[4,5,4],[4,5,5],[4,5,6],[4,5,7],
-      [4,5,8],[4,6,4],[4,6,5],[4,6,6],[4,6,7],[4,6,8],
-      // Layer 5: 3 tiles
-      [5,5,5],[5,5,6],[5,5,7],
+      [1,16,8],
+      [1,16,16],
+      [1,16,24],
+      [1,16,32],
+      [1,16,40],
+      [1,24,8],
+      [1,24,16],
+      [1,24,32],
+      [1,24,40],
+      [1,32,8],
+      [1,32,16],
+      [1,32,24],
+      [1,32,32],
+      [1,32,40],
+      [1,40,8],
+      [1,40,16],
+      [1,40,24],
+      [1,40,32],
+      [2,20,4],
+      [2,20,12],
+      [2,20,44],
+      [2,20,52],
+      [2,28,4],
+      [2,28,12],
+      [2,28,36],
+      [2,28,44],
+      [2,28,52],
+      [2,36,4],
+      [2,36,12],
+      [2,36,44],
+      [2,36,52],
+      [2,44,4],
+      [2,44,52],
+      [3,28,4],
+      [3,28,12],
+      [3,28,44],
+      [3,28,52],
+      [3,36,4],
+      [3,36,52],
+      [4,28,4],
+      [4,28,12],
+      [4,28,44],
+      [4,28,52],
+      [5,56,8],
+      [5,56,48],
+      [6,56,9],
+      [6,56,47],
+      [7,56,10],
+      [7,56,46],
+      [8,56,11],
+      [8,56,45],
+      [9,56,12],
+      [9,56,44],
+      [10,56,13],
+      [10,56,43],
+      [11,56,14],
+      [11,56,42],
+      [12,56,15],
+      [12,56,41],
+      [13,56,16],
+      [13,56,40],
+      [14,56,17],
+      [14,56,39],
+      [15,56,18],
+      [15,56,38],
     ]
   }
 ];
 
+
 const SLOT_MAX = 7;
-const TILE_SIZE = 40;
 
 let state = { level: 0, nodes: [], selectedNodes: [], removedNodes: [], preNode: null, removeFlag: false, backFlag: false };
 
@@ -105,39 +184,56 @@ function rand(min, max) { return Math.floor(Math.random() * (max - min)) + min; 
 
 function updateStates() {
   state.nodes.forEach(function(node) {
-    // Skip already-removed (state=3) or selected (state=2) nodes
     if (node.state >= 2) return;
     node.state = node.parents.every(function(p) { return p.state >= 2; }) ? 1 : 0;
   });
 }
 
+
 function handleSelect(node) {
+  if (state.removeFlag) return;
   if (state.selectedNodes.length >= SLOT_MAX) return;
   if (node.state !== 1) return;
   node.state = 2;
   state.preNode = node;
-  const sameType = state.selectedNodes.filter(function(s) { return s.type === node.type; });
-  if (sameType.length === 2) {
-    const secondIdx = state.selectedNodes.findIndex(function(s) { return s.id === sameType[1].id; });
-    state.selectedNodes.splice(secondIdx + 1, 0, node);
-    setTimeout(function() {
-      for (let i = 0; i < 3; i++) {
-        const idx = state.selectedNodes.findIndex(function(s) { return s.type === node.type; });
-        if (idx > -1) { const r = state.selectedNodes.splice(idx, 1)[0]; r.state = 3; }
-      }
-      state.preNode = null;
-      updateStates();
-      render();
-      if (state.nodes.every(function(n) { return n.state >= 2; })) setTimeout(onWin, 500);
-    }, 150);
-  } else {
-    const idx = state.selectedNodes.findIndex(function(s) { return s.type === node.type; });
-    if (idx > -1) state.selectedNodes.splice(idx + 1, 0, node);
-    else state.selectedNodes.push(node);
+  let insertPos = state.selectedNodes.length;
+  for (let i = state.selectedNodes.length - 1; i >= 0; i--) {
+    if (state.selectedNodes[i].type === node.type) { insertPos = i + 1; break; }
+  }
+  state.selectedNodes.splice(insertPos, 0, node);
+  setTimeout(function() {
+    eliminateTriples();
     updateStates();
     render();
-    if (state.selectedNodes.length >= SLOT_MAX) setTimeout(onLose, 300);
+    if (state.selectedNodes.length >= SLOT_MAX) setTimeout(onLose, 200);
+    if (state.nodes.every(function(n) { return n.state >= 2; }) && state.selectedNodes.length === 0) {
+      setTimeout(onWin, 400);
+    }
+  }, 80);
+}
+
+function eliminateTriples() {
+  state.removeFlag = true;
+  let removed = true;
+  while (removed) {
+    removed = false;
+    let i = 0;
+    while (i < state.selectedNodes.length) {
+      let j = i + 1;
+      while (j < state.selectedNodes.length && state.selectedNodes[j].type === state.selectedNodes[i].type) j++;
+      const runLen = j - i;
+      if (runLen >= 3) {
+        for (let k = i; k < j; k++) {
+          const r = state.selectedNodes[k];
+          r.state = 3;
+          if (state.removedNodes.indexOf(r) === -1) state.removedNodes.push(r);
+        }
+        state.selectedNodes.splice(i, runLen);
+        removed = true;
+      } else { i++; }
+    }
   }
+  state.removeFlag = false;
 }
 
 function handleBack() {
@@ -154,16 +250,10 @@ function handleBack() {
 }
 
 function handleRemove() {
-  if (state.removeFlag || state.selectedNodes.length < 3) return;
-  state.removeFlag = true;
-  state.preNode = null;
-  for (let i = 0; i < 3; i++) {
-    const node = state.selectedNodes.shift();
-    if (node) { node.state = 3; state.removedNodes.push(node); }
-  }
-  render();
-  setTimeout(function() { state.removeFlag = false; }, 500);
+  if (state.removeFlag) return;
+  state.removeFlag = false;
 }
+
 
 function initLevel(levelIdx) {
   state.level = levelIdx;
@@ -174,127 +264,75 @@ function initLevel(levelIdx) {
   const W = container.clientWidth;
   const H = container.clientHeight;
 
-  // Determine tile size: pick the side that yields a tall enough tile to fit the grid,
-  // and then a separate side to fit horizontally. We use the smaller of the two so the
-  // entire grid (including upper-layer shifts) fits inside the play area.
-  // Reserve vertical room so the topmost stacked layer doesn't get clipped.
-  const upperLayers = cfg.tiles.reduce(function(m, t) { return Math.max(m, t[0]); }, 0);
-  // Upper layers shift left AND up by half-tile per layer. So the total visible grid
-  // extends ~upperLayers/2 cells beyond the base grid on the LEFT and TOP.
-  // Account for that in both dimensions so the layout doesn't overflow the play area.
-  const halfLayers = upperLayers * 0.5;
-  const maxW = Math.floor((W - 16) / (cfg.widthNum + halfLayers));
-  const maxH = Math.floor((H - 32) / (cfg.heightNum + halfLayers));
-  const tileSize = Math.max(22, Math.min(maxW, maxH, 44));
-  const tileW = tileSize;
-  const tileH = tileSize;
+  let maxColPx = 0, maxRowPx = 0;
+  cfg.tiles.forEach(function(t) {
+    if (t[2] > maxColPx) maxColPx = t[2];
+    if (t[1] > maxRowPx) maxRowPx = t[1];
+  });
 
-  // Build the tile pool: cfg.cardNum types × cfg.cardsEach copies of each.
-  //   cardsEach = 3  → standard match-3
-  //   cardsEach > 3 → "each type forms multiple triples" → tougher pool
-  const pool = [];
-  for (let i = 0; i < (cfg.cardNum || 0); i++) {
-    for (let k = 0; k < (cfg.cardsEach || 3); k++) pool.push(i);
-  }
+  const cellPx = 16;
+  const layoutW = maxColPx + cellPx;
+  const layoutH = maxRowPx + cellPx;
+  const scale = Math.min(1, (W - 16) / layoutW, (H - 32) / layoutH);
+  const tileSize = Math.max(20, Math.floor(cellPx * scale));
 
-  // Truncate pool to actual tile count if too many.
-  // Random distribution: each tile type gets assigned from the pool (round-robin on types)
-  // We don't need shuffle-the-pool correctness — just enough to fill the design.
-  let poolIdx = 0;
-  function nextType() {
-    if (poolIdx >= pool.length) {
-      // wrap and extend pool if exhausted (shouldn't normally happen)
-      const i = poolIdx % pool.length;
-      poolIdx++;
-      return pool[i];
-    }
-    return pool[poolIdx++];
-  }
-
-  // Convert cfg.tiles (level data) into node objects with screen positions.
-  // tile = [layer, row, col] — we pick type from pool in order (deterministic).
-  // Shuffle the pool once so the assignment is random but reproducible.
-  const shuffled = shuffle(pool.slice());
-  let shuffledIdx = 0;
-  function drawType() {
-    if (shuffledIdx >= shuffled.length) shuffledIdx = 0;
-    return shuffled[shuffledIdx++];
-  }
-
-  // Centering strategy (handles upper-layer shifts correctly):
-  //   1. Compute each tile's raw top-left assuming the base grid origin is (0, 0).
-  //   2. Compute the bounding box (min/max left/top) of all raw positions.
-  //   3. Compute offsets to center that bounding box inside the play area (W x H).
-  //   4. tilePos() returns the final top-left, applying those offsets.
-  function rawPos(layer, row, col) {
-    const shiftX = (tileW / 2) * layer;
-    const shiftY = (tileH / 2) * layer;
+  function rawPos(layer, rowPx, colPx) {
     return {
-      left: tileW * col - shiftX,
-      top:  tileH * row - shiftY
+      left: colPx * tileSize / MIN_BLOCK_NUM,
+      top:  rowPx * tileSize / MIN_BLOCK_NUM
     };
   }
 
-  let minL = Infinity, minT = Infinity, maxR = -Infinity, maxB = -Infinity;
   cfg.tiles.forEach(function(t) {
-    const p = rawPos(t[0], t[1], t[2]);
-    if (p.left < minL) minL = p.left;
-    if (p.top  < minT) minT = p.top;
-    if (p.left + tileW > maxR) maxR = p.left + tileW;
-    if (p.top  + tileH > maxB) maxB = p.top  + tileH;
-  });
-  const layoutW = maxR - minL;
-  const layoutH = maxB - minT;
-  const offsetX = (W - layoutW) / 2 - minL;
-  const offsetY = (H - layoutH) / 2 - minT;
-
-  function tilePos(layer, row, col) {
-    const p = rawPos(layer, row, col);
-    return { left: p.left + offsetX, top: p.top + offsetY };
-  }
-
-  cfg.tiles.forEach(function(t) {
-    const layer = t[0], row = t[1], col = t[2];
-    const pos = tilePos(layer, row, col);
+    const pos = rawPos(t[0], t[1], t[2]);
     state.nodes.push({
-      id: layer + '-' + row + '-' + col,
-      type: drawType(),
-      zIndex: 10 + layer,
-      layer: layer,
-      row: row,
-      col: col,
-      top: pos.top,
-      left: pos.left,
+      id: t[0] + '-' + t[1] + '-' + t[2] + '-' + rand(0, 99999),
+      type: 0,
+      zIndex: 10 + t[0],
+      layer: t[0],
+      rowPx: t[1], colPx: t[2],
+      top: pos.top, left: pos.left,
       tileSize: tileSize,
-      parents: [],
-      state: 0
+      parents: [], state: 0
     });
   });
 
-  // Build "is covered by upper-layer tile at same position" check.
-  // We use a half-tile radius (~0.6 of tileW) for "same column/row alignment".
-  // Compute each node's visual (row, col) — accounting for the half-tile shift per layer.
-  // Layer L sits at visual position (row - L/2, col - L/2) in cell units.
-  // An upper tile covers self when upper's visual cell CONTAINS self's CENTER.
-  // Equivalently: upper.vis in [self.vis - 0.5, self.vis + 0.5].
-  for (let i = 0; i < state.nodes.length; i++) {
-    const self = state.nodes[i];
-    self.visRow = self.row - 0.5 * self.layer;
-    self.visCol = self.col - 0.5 * self.layer;
-  }
+  const pool = [];
+  Object.keys(cfg.blockTypeData).forEach(function(t) {
+    const tid = parseInt(t);
+    for (let k = 0; k < cfg.blockTypeData[t]; k++) pool.push(tid);
+  });
+  shuffle(pool);
+  let poolIdx = 0;
+  state.nodes.forEach(function(n) {
+    n.type = pool[poolIdx < pool.length ? poolIdx++ : (poolIdx++ % pool.length)];
+  });
+
+  let minL = Infinity, minT = Infinity, maxR = -Infinity, maxB = -Infinity;
+  state.nodes.forEach(function(n) {
+    if (n.left < minL) minL = n.left;
+    if (n.top  < minT) minT = n.top;
+    if (n.left + tileSize > maxR) maxR = n.left + tileSize;
+    if (n.top  + tileSize > maxB) maxB = n.top  + tileSize;
+  });
+  const bboxW = maxR - minL;
+  const bboxH = maxB - minT;
+  const offsetX = (W - bboxW) / 2 - minL;
+  const offsetY = (H - bboxH) / 2 - minT;
+  state.nodes.forEach(function(n) {
+    n.left += offsetX;
+    n.top  += offsetY;
+  });
+
+  const coverDist = tileSize * 0.7;
   for (let i = 0; i < state.nodes.length; i++) {
     const self = state.nodes[i];
     for (let j = 0; j < state.nodes.length; j++) {
       if (i === j) continue;
       const upper = state.nodes[j];
       if (upper.layer <= self.layer) continue;
-      // upper's visual cell range: [vis - 0.5, vis + 0.5]
-      // If self's visual center is inside that, upper covers self.
-      const uR = upper.visRow;
-      const uC = upper.visCol;
-      const sR = self.visRow;
-      const sC = self.visCol;
-      if (Math.abs(sR - uR) <= 0.5 && Math.abs(sC - uC) <= 0.5) {
+      if (Math.abs(upper.top - self.top) <= coverDist &&
+          Math.abs(upper.left - self.left) <= coverDist) {
         self.parents.push(upper);
       }
     }
@@ -305,6 +343,7 @@ function initLevel(levelIdx) {
   document.getElementById('level-num').textContent = 'Level ' + (levelIdx + 1) + ' / ' + LEVELS.length;
   render();
 }
+
 function render() {
   const area = document.getElementById('game-area');
   Array.from(area.querySelectorAll('.tile')).forEach(function(c) { c.remove(); });
