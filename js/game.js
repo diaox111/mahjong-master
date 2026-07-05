@@ -21,13 +21,18 @@ const LEVELS = [
     widthNum: 7,
     heightNum: 3,
     cardNum: 7,
-    cardsEach: 3,   // 7 types x 3 copies = 21 tiles, all flat (no stacking)
-    layers: 1,
+    cardsEach: 3,  // 7 types x 3 copies = 21
+    layers: 2,
     tiles: [
-      // Single layer: 7x3 = 21 tiles, all clickable from start
-      [0,0,0],[0,0,1],[0,0,2],[0,0,3],[0,0,4],[0,0,5],[0,0,6],
+      // Layer 0: 7x3 = 21 positions. Upper tile covers base (0,0,0) only (edge of grid),
+      // so we leave (0,0,0) empty and fill the remaining 20 spots. Total = 20 base + 1 upper = 21.
+      // The upper tile is freely clickable (nothing is on top of IT).
+      // When clicked, its type appears 2 more times elsewhere in the base -> 3-of-a-kind match possible.
+      [0,0,1],[0,0,2],[0,0,3],[0,0,4],[0,0,5],[0,0,6],
       [0,1,0],[0,1,1],[0,1,2],[0,1,3],[0,1,4],[0,1,5],[0,1,6],
-      [0,2,0],[0,2,1],[0,2,2],[0,2,3],[0,2,4],[0,2,5],[0,2,6]
+      [0,2,0],[0,2,1],[0,2,2],[0,2,3],[0,2,4],[0,2,5],[0,2,6],
+      // Layer 1: single tile in top-left corner where it covers exactly one base position
+      [1,0,0]
     ]
   },
   {name: 'Insane',
